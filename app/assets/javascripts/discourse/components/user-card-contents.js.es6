@@ -159,7 +159,8 @@ export default Ember.Component.extend(CleansUp, {
     $('#main-outlet').on(clickMention, 'a.mention', (e) => {
       if (wantsNewWindow(e)) { return; }
       const $target = $(e.target);
-      return this._show($target.text().replace(/^@/, ''), $target);
+      // use the URL to allow plugins to recognize custom mention text
+      return this._show($target[0].href.substr($target[0].href.lastIndexOf('/') + 1), $target);
     });
   },
 
