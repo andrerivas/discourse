@@ -51,13 +51,12 @@ class PostAnalyzer
     return @raw_mentions if @raw_mentions.present?
 
     raw_mentions = cooked_stripped.css('.mention, .mention-group').map do |e|
-       if name = e.inner_text
-         name = name[1..-1]
+       if name = URI(e.attr("href")).path.split('/').last
          name.downcase! if name
          name
        end
     end
-
+    
     raw_mentions.compact!
     raw_mentions.uniq!
     @raw_mention = raw_mentions
