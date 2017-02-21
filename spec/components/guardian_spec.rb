@@ -281,6 +281,24 @@ describe Guardian do
     end
   end
 
+  describe "can_view_action_logs?" do
+    it 'is false for non-staff acting user' do
+      expect(Guardian.new(user).can_view_action_logs?(moderator)).to be_falsey
+    end
+
+    it 'is false without a target user' do
+      expect(Guardian.new(moderator).can_view_action_logs?(nil)).to be_falsey
+    end
+
+    it 'is false for non-staff target user' do
+      expect(Guardian.new(moderator).can_view_action_logs?(user)).to be_falsey
+    end
+
+    it 'is true for staff target user' do
+      expect(Guardian.new(moderator).can_view_action_logs?(admin)).to be_truthy
+    end
+  end
+
   describe 'can_invite_to_forum?' do
     let(:user) { Fabricate.build(:user) }
     let(:moderator) { Fabricate.build(:moderator) }
@@ -341,16 +359,6 @@ describe Guardian do
       expect(Guardian.new(moderator).can_invite_to?(topic)).to be_truthy
     end
 
-    it 'returns true when the site requires approving users and is mod' do
-      SiteSetting.expects(:must_approve_users?).returns(true)
-      expect(Guardian.new(moderator).can_invite_to?(topic)).to be_truthy
-    end
-
-    it 'returns false when the site requires approving users and is regular' do
-      SiteSetting.expects(:must_approve_users?).returns(true)
-      expect(Guardian.new(coding_horror).can_invite_to?(topic)).to be_falsey
-    end
-
     it 'returns false for normal user on private topic' do
       expect(Guardian.new(user).can_invite_to?(private_topic)).to be_falsey
     end
@@ -361,6 +369,38 @@ describe Guardian do
 
     it 'returns true for a group owner' do
       expect(Guardian.new(group_owner).can_invite_to?(group_private_topic)).to be_truthy
+    end
+  end
+
+  describe 'can_invite_via_email?' do
+    it 'returns true for all (tl2 and above) users when sso is disabled, local logins are enabled, user approval is not required' do
+      expect(Guardian.new(trust_level_2).can_invite_via_email?(topic)).to be_truthy
+      expect(Guardian.new(moderator).can_invite_via_email?(topic)).to be_truthy
+      expect(Guardian.new(admin).can_invite_via_email?(topic)).to be_truthy
+    end
+
+    it 'returns false for all users when sso is enabled' do
+      SiteSetting.enable_sso = true
+
+      expect(Guardian.new(trust_level_2).can_invite_via_email?(topic)).to be_falsey
+      expect(Guardian.new(moderator).can_invite_via_email?(topic)).to be_falsey
+      expect(Guardian.new(admin).can_invite_via_email?(topic)).to be_falsey
+    end
+
+    it 'returns false for all users when local logins are disabled' do
+      SiteSetting.enable_local_logins = false
+
+      expect(Guardian.new(trust_level_2).can_invite_via_email?(topic)).to be_falsey
+      expect(Guardian.new(moderator).can_invite_via_email?(topic)).to be_falsey
+      expect(Guardian.new(admin).can_invite_via_email?(topic)).to be_falsey
+    end
+
+    it 'returns correct valuse when user approval is required' do
+      SiteSetting.must_approve_users = true
+
+      expect(Guardian.new(trust_level_2).can_invite_via_email?(topic)).to be_falsey
+      expect(Guardian.new(moderator).can_invite_via_email?(topic)).to be_truthy
+      expect(Guardian.new(admin).can_invite_via_email?(topic)).to be_truthy
     end
   end
 

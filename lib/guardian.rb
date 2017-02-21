@@ -158,6 +158,10 @@ class Guardian
     # make it impossible to be the same user.
   end
 
+  def can_view_action_logs?(target)
+    is_staff? && target && target.staff?
+  end
+
   # Can we approve it?
   def can_approve?(target)
     is_staff? && target && not(target.approved?)
@@ -229,7 +233,6 @@ class Guardian
 
   def can_invite_to?(object, group_ids=nil)
     return false if ! authenticated?
-    return false unless (!SiteSetting.must_approve_users? || is_staff?)
     return true if is_admin?
     return false if (SiteSetting.max_invites_per_day.to_i == 0 && !is_staff?)
     return false if ! can_see?(object)
@@ -242,6 +245,11 @@ class Guardian
     end
 
     user.has_trust_level?(TrustLevel[2])
+  end
+
+  def can_invite_via_email?(object)
+    return false unless can_invite_to?(object)
+    !SiteSetting.enable_sso && SiteSetting.enable_local_logins && (!SiteSetting.must_approve_users? || is_staff?)
   end
 
   def can_bulk_invite_to_forum?(user)

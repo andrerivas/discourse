@@ -85,7 +85,7 @@ export default createWidget('search-menu', {
 
       query += `q=${encodeURIComponent(searchData.term)}`;
 
-      if (contextEnabled) {
+      if (contextEnabled && ctx) {
         if (this.currentUser &&
             ctx.id.toString().toLowerCase() === this.currentUser.username_lower &&
             type === "private_messages") {
@@ -170,6 +170,7 @@ export default createWidget('search-menu', {
   },
 
   searchContextChanged(enabled) {
+    // This indicates the checkbox has been clicked, NOT that the context has changed.
     searchData.typeFilter = null;
     this.sendWidgetAction('searchMenuContextChanged', enabled);
     searchData.contextEnabled = enabled;
